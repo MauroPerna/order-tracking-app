@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
-
 import "./utils/Queue.sol";
 import "./utils/Dispatcher.sol";
 import "./utils/Warehouse.sol";
@@ -145,11 +143,19 @@ contract App is Ownable {
         client.createClient(_clientAddress, newClient);
     }
 
+    /**
+     * @dev Function to get an Order
+     * @param orderId order's id
+     */
     function getOrder(bytes32 orderId) public view returns (Order memory) {
         return _getOrder(orderId);
     }
 
     // Client
+    /**
+     * @dev Function to create an Order
+     * @param quantities array with quantities of each product
+     */
     function createOrder(uint8[] memory quantities) public payable onlyClient {
         uint8 quantityItems;
         bytes32 orderId = keccak256(
@@ -180,6 +186,10 @@ contract App is Ownable {
         emit OrderCreated(msg.sender, orderId);
     }
 
+    /**
+     * @dev Function to cancel an Order
+     * @param orderId order's id
+     */
     function cancelOrder(bytes32 orderId) public onlyClient {
         require(
             clientToOrders[msg.sender][orderId].exist,
@@ -194,12 +204,20 @@ contract App is Ownable {
         clientToOrders[msg.sender][orderId].orderStatus = OrderStatus.CANCELED;
     }
 
+    /**
+     * @dev Function to get products from an order
+     * @param orderId order's id
+     */
     function getProductsByClient(
         bytes32 orderId
     ) public view onlyClient returns (Product[5] memory products) {
         return _getProducts(orderId, msg.sender);
     }
 
+    /**
+     * @dev Function to confirm that an order has been received
+     * @param orderId order's id
+     */
     function verifyOrder(bytes32 orderId) public onlyClient {
         Order storage order = _getOrder(orderId);
         order.orderStatus = OrderStatus.VERIFIED;
@@ -207,6 +225,11 @@ contract App is Ownable {
         ownerAddress.transfer(order.price);
     }
 
+    /**
+     * @dev Function to notify the status in which an order was received
+     * @param orderId order's id
+     * @param reason reason for discrepancy
+     */
     function markOrderAsReceivedWithDiscrepancy(
         bytes32 orderId,
         OrderVerification reason
@@ -231,6 +254,10 @@ contract App is Ownable {
     }
 
     // Warehouse Worker
+
+    /**
+     * @dev Function to add an order in preparation stage
+     */
     function addOrderToPreparationStage() public onlyWarehouseWorker {
         bool orderFound = false;
         bytes32 orderId;
@@ -254,6 +281,9 @@ contract App is Ownable {
         }
     }
 
+    /**
+     * @dev Function to move an order to deliver stagea
+     */
     function moveOrderToDeliverStage() public onlyWarehouseWorker {
         require(
             warehouserToOrderId[msg.sender] != bytes32(0),
@@ -266,6 +296,9 @@ contract App is Ownable {
         dispatchedOrdersQueue.enqueue(orderId);
     }
 
+    /**
+     * @dev Function to take an order and dispatch it
+     */
     function dispatchOrder() public onlyDispatcherWorker {
         bytes32 orderId = dispatchedOrdersQueue.dequeue();
         Order storage order = _getOrder(orderId);
@@ -273,6 +306,9 @@ contract App is Ownable {
         dispatcherToOrderId[msg.sender] = orderId;
     }
 
+    /**
+     * @dev Function to mark an order as delivered
+     */
     function deliverOrder() public onlyDispatcherWorker {
         require(
             dispatcherToOrderId[msg.sender] != bytes32(0),
@@ -287,6 +323,10 @@ contract App is Ownable {
 
     // ========================================== PRIVATE METHODS ==========================================
 
+    /**
+     * @dev Private function to get an instance of the order in the contract.
+     * @param _orderId order's id
+     */
     function _getOrder(bytes32 _orderId) private view returns (Order storage) {
         require(
             orderIdToClientAddress[_orderId] != address(0),
@@ -300,6 +340,12 @@ contract App is Ownable {
         return clientToOrders[_ownerOfOrder][_orderId];
     }
 
+    /**
+     * @dev Private function to add products to an order
+     * @param _orderId order's id
+     * @param sku off-chain identifier of the product
+     * @param quantity of product
+     */
     function _addProduct(
         bytes32 _orderId,
         string memory sku,
@@ -309,6 +355,11 @@ contract App is Ownable {
         orderToProducts[_orderId].push(newProduct);
     }
 
+    /**
+     * @dev Private function to get products from an order
+     * @param _orderId order's id
+     * @param _account address of the client who owns the order
+     */
     function _getProducts(
         bytes32 _orderId,
         address _account
