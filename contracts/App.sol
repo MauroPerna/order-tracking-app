@@ -16,7 +16,13 @@ contract App is Ownable {
     string[] private skus;
 
     event OrderCreated(address client, bytes32 orderId);
-    event OrderDeliver(bytes32 orderId);
+    event OrderCanceled(bytes32 orderId);
+    event OrderInPreration(bytes32 orderId);
+    event OrderPrepared(bytes32 orderId);
+    event OrderInTransit(bytes32 orderId);
+    event OrderDelivered(bytes32 orderId);
+    event OrderVerified(bytes32 orderId);
+    event OrderReceivedWithDiscrepancy(bytes32 orderId);
     event LogMessage(string message);
 
     mapping(address => mapping(bytes32 => Order)) public clientToOrders;
@@ -151,7 +157,7 @@ contract App is Ownable {
         return _getOrder(orderId);
     }
 
-    // Client
+    // =============================== Client ===============================
     /**
      * @dev Function to create an Order
      * @param quantities array with quantities of each product
@@ -202,6 +208,7 @@ contract App is Ownable {
         );
 
         clientToOrders[msg.sender][orderId].orderStatus = OrderStatus.CANCELED;
+        emit OrderCanceled(orderId);
     }
 
     /**
@@ -223,6 +230,7 @@ contract App is Ownable {
         order.orderStatus = OrderStatus.VERIFIED;
         address payable ownerAddress = payable(owner());
         ownerAddress.transfer(order.price);
+        emit OrderVerified(orderId);
     }
 
     /**
@@ -251,9 +259,10 @@ contract App is Ownable {
 
         Order storage order = _getOrder(orderId);
         order.orderVerification = reason;
+        emit OrderReceivedWithDiscrepancy(orderId);
     }
 
-    // Warehouse Worker
+    //  ================================= Warehouse Worker =================================
 
     /**
      * @dev Function to add an order in preparation stage
@@ -276,6 +285,7 @@ contract App is Ownable {
             Order storage order = _getOrder(orderId);
             order.orderStatus = OrderStatus.IN_PREPARATION;
             warehouserToOrderId[msg.sender] = orderId;
+            emit OrderInPreration(orderId);
         } else {
             revert("No valid order found in client queue");
         }
@@ -294,7 +304,10 @@ contract App is Ownable {
         Order storage order = _getOrder(orderId);
         order.orderStatus = OrderStatus.PREPARED;
         dispatchedOrdersQueue.enqueue(orderId);
+        emit OrderPrepared(orderId);
     }
+
+    // =============================== Dispatcher Worker ===============================
 
     /**
      * @dev Function to take an order and dispatch it
@@ -304,6 +317,7 @@ contract App is Ownable {
         Order storage order = _getOrder(orderId);
         order.orderStatus = OrderStatus.IN_TRANSIT;
         dispatcherToOrderId[msg.sender] = orderId;
+        emit OrderInTransit(orderId);
     }
 
     /**
@@ -318,7 +332,7 @@ contract App is Ownable {
         delete dispatcherToOrderId[msg.sender];
         Order storage order = _getOrder(orderId);
         order.orderStatus = OrderStatus.DELIVERED;
-        emit OrderDeliver(orderId);
+        emit OrderDelivered(orderId);
     }
 
     // ========================================== PRIVATE METHODS ==========================================

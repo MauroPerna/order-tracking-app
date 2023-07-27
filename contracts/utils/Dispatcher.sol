@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 contract Dispatcher {
-
     constructor() {}
 
     struct Worker {
@@ -12,11 +11,14 @@ contract Dispatcher {
 
     mapping(address => Worker) public dispatcherWorkers;
 
-    function createDispatcherWorker(address _worker, Worker memory item) public {
+    function createDispatcherWorker(
+        address _worker,
+        Worker memory item
+    ) public {
         dispatcherWorkers[_worker] = item;
     }
 
-    function exist(address _address) public view returns(bool) {
+    function exist(address _address) public view returns (bool) {
         return dispatcherWorkers[_address].exist;
     }
 }

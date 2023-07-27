@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 contract Warehouse {
-
     constructor() {}
 
     struct Worker {
@@ -12,12 +11,11 @@ contract Warehouse {
 
     mapping(address => Worker) public warehouseStaff;
 
-
     function createWarehouseWorker(address _worker, Worker memory item) public {
         warehouseStaff[_worker] = item;
     }
 
-    function exist(address _address) public view returns(bool) {
+    function exist(address _address) public view returns (bool) {
         return warehouseStaff[_address].exist;
     }
 }
