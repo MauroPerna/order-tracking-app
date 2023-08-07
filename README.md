@@ -2,6 +2,8 @@
 
 Este proyecto implementa un sistema de manejo de ordenes utilizando contratos inteligentes en la red Ethereum. Los contratos permiten el manejo de clientes, trabajadores de almacén, y despachadores.
 
+![alt text](diagram.jpeg)
+
 ## Requisitos
 
 - Node.js v16.0.0 o superior.
